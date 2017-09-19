@@ -1,0 +1,270 @@
+<html>
+	<head>
+	<title> NAVCOM </title>
+	<style>
+		* {
+			border: solid 1px black;
+			margin: 2px;
+			padding: 2px;
+		}
+		#overlays {
+			opacity: 0.3;
+			position: relative;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			padding: 0;
+			border: none;
+			margin: 0;
+		}
+		#overlays * {
+			margin: 0;
+		}
+		#overlays > * {
+			position: absolute;
+			background-color: black;
+		}
+		#map {
+			height: 80%;
+			background-color: #9d9d41;
+			position: relative;
+		}
+		.actions {
+			height: 20%;
+			background-color: green;
+		}
+		.lock {
+			top: 15px;
+			right: 15px;
+			width: 110px;
+			height: 110px;
+			z-index: 999;
+		}
+		.lockicon {
+			width: 107px;
+			height: 107px;
+		}
+		.players {
+			top: 0;
+			left: 0;
+			width: 30%;
+			height: 100%;
+			font-size: 28px;
+		}
+		.players .status {
+			float: right;
+			color: white;
+		}
+		.players .name {
+			color: #00ffc6;
+			font-weight: 400;
+		}
+		.actions .status {
+			background-color: red;
+			display: inline-block;
+			height: 100%;
+			width: 120px;
+		}
+		.statuses .statusButton {
+			background-color: #492323;
+			display: inline-block;
+			height: 92%;
+			width: 110px;
+		}
+		.lockinglayer {
+			height: 100%;
+			width: 100%;
+			opacity: 0.2;
+			background-color: crimson;
+			z-index: -5;
+			position: absolute;
+		}
+		.lockicon {
+			z-index: 1000;
+		}
+	</style>
+		<script type="text/javascript">
+			
+			const selfIndex = 0;
+			const actionButtons = [
+				{
+					name: 'ready',
+					smallIcon: 'http://www.pargaran.com/wp-content/uploads/2015/04/check-64.png',
+					bigIcon: 'http://icons.iconarchive.com/icons/paomedia/small-n-flat/512/sign-check-icon.png',
+					color: 'green'
+				},
+				{
+					name: 'inProgress',
+					smallIcon: 'http://www.qju88.com/images/icon.png',
+					bigIcon: 'http://cdn.mysitemyway.com/etc-mysitemyway/icons/legacy-previews/icons/yellow-road-sign-icons-business/088809-yellow-road-sign-icon-business-hourglass3-sc44.png',
+					color: 'yellow'
+				},
+				{
+					name: 'dead',
+					smallIcon: 'https://www.shareicon.net/data/32x32/2016/08/18/815469_medical_512x512.png',
+					bigIcon: 'https://trading.sepredaj.sk/images/icons/cancel2.png',
+					color: 'red'
+				},
+				{
+					name: 'injured',
+					smallIcon: 'https://mt.googleapis.com/vt/icon/name=icons/onion/73-hospitals.png',
+					bigIcon: 'https://cdn2.iconfinder.com/data/icons/toolbar-signs/512/medical-512.png',
+					color: 'magenta'
+				},
+				{
+					name: 'empty',
+					smallIcon: 'http://basicsrangeandgun.com/wp-content/uploads/2013/05/gunicon.png',
+					bigIcon: 'https://cdn0.iconfinder.com/data/icons/nato-military-symbols-standard-hostile-land-units/512/land_hostile_supply_ammo_512-512.png',
+					color: 'gray'
+				}
+				
+			];
+			
+			document.addEventListener('readystatechange', function(e){
+				if (e.target.readyState === "complete") {
+					bootstrap();
+					addNewElement(actionButtons);
+					lockListener();
+					unlockListener();
+				}
+				
+			}, false);
+			
+			function getBigIcon(arr){
+				//пока ничего не возвращаю, но вывод корректный, на выходе будет генерить готовый tag
+				var arr = actionButtons;
+				for (var i = 0; i < arr.length; i++) {
+					console.log('HERE_BIG_ICON: <img class="status" src="' + arr[i].bigIcon + '>');
+				}
+				
+			}
+			
+			function getSmallIcon(arr){
+				//тоже самое что и метод выше
+				var arr = actionButtons;
+				for (var i = 0; i < arr.length; i++) {
+					console.log('HERE_SMALL_ICON: <img class="status" src="' + arr[i].smallIcon + '>');
+				}
+			}
+			
+			
+			function addNewElement(arr){
+				statuses = document.querySelectorAll('.actions .statuses')[0];
+				for (var i = 0; i < arr.length; i++){
+					var li = document.createElement ('li');
+					var img = new Image();
+					img.className = 'statusButton';
+					img.src = arr[i].bigIcon;
+					img.name = arr[i].name;
+					li.className = 'status';
+					li.appendChild(img);
+					statuses.appendChild(li);
+				}
+			
+			}
+						
+			function bootstrap(){
+				const actions = document.getElementsByClassName('actions')[0]; 
+				actions.addEventListener('click', statusClick);
+			}
+
+			function lockListener() {
+				const lock = document.querySelectorAll('#overlays .lock')[0];
+				lock.addEventListener('click', lockUi);
+			}
+			
+			function unlockListener() {
+				const lockingLayer = document.querySelectorAll('.lockinglayer')[0];
+				lockingLayer.addEventListener('dblclick', unlockUi);
+			}
+			
+			function statusClick(e) {
+				const element = e.target,
+					nameValue = element.attributes.name.value,
+					playerNode = document.querySelectorAll('.players .player')[0],
+					nameNode = document.querySelectorAll('.players .player .name')[0];
+					var serviceArr = actionButtons;
+					for(var i = 0; i < serviceArr.length; i++){
+						if(serviceArr[i].name == nameValue){
+							var textColor = serviceArr[i].color;
+							var img = playerNode.querySelector('img.status');
+                            if (!img) {
+                                //или просто в штмл добавить имг сразу. а это для наглядности
+                                img = document.createElement('img');
+                                img.className = 'status';
+                                playerNode.appendChild(img);
+                            }
+							img.src = serviceArr[i].smallIcon;
+							nameNode.style.color = textColor;
+						}
+					}
+				
+			}
+			
+			function lockUi() {
+				const lockingLayer = document.getElementsByClassName('lockinglayer')[0];
+					lockingLayer.style.zIndex = 1;
+						console.log('IS_LOCKED');
+			}
+			
+			function unlockUi() {
+				const lockingLayer1 = document.getElementsByClassName('lockinglayer')[0];
+					lockingLayer1.style.zIndex = -1;
+						console.log('IS_UNLOCKED'); 
+			}
+			
+		</script>
+	</head>
+	
+	<body>
+		
+		<div class="lockinglayer"></div>
+			<div id="map">
+				<div id="overlays">
+					<div class="players">
+						<ul>
+							<li class="player">
+								<span class="name">BadAss</span>
+								<!--<span class="status"></span>-->
+							</li>
+							<li class="player">
+								<span class="name">ShitMan</span>
+								<!--<span class="status"></span>-->
+							</li>
+						</ul>
+					</div>
+					<div class="lock"><img class="lockicon" src="https://images.vexels.com/media/users/3/132074/isolated/preview/0117cb0129593faa02646a8277ca80e3-security-lock-icon-by-vexels.png" ></div>
+				</div>
+			</div>
+			<div class="actions">
+				<ul class="statuses"></ul>
+			
+			</div>
+	</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</html>
